@@ -1,16 +1,76 @@
+![ClickMore — one click, every spot](docs/media/header.png)
+
 # ClickMore
+
+[![Build and test](https://github.com/HelgeSverre/clickmore/actions/workflows/ci.yml/badge.svg)](https://github.com/HelgeSverre/clickmore/actions/workflows/ci.yml)
+![macOS 14+](https://img.shields.io/badge/macOS-14%2B-222222?logo=apple&logoColor=white)
+![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
+![Native AppKit + SwiftUI](https://img.shields.io/badge/UI-AppKit%20%2B%20SwiftUI-0C8991)
+[![Latest release](https://img.shields.io/github/v/release/HelgeSverre/clickmore)](https://github.com/HelgeSverre/clickmore/releases/latest)
 
 ClickMore is a native macOS menu bar app with a movable floating trigger. Place click spots over buttons in a game or another app; one trigger click clicks every spot in order, with a default 10 ms delay between clicks.
 
-## Run
+## How it works
 
-Requires macOS 14 or later and Xcode command line tools with Swift 6.
+![Animated illustration: create four click spots with Option-drag, click all four, move the trigger alone, then move the entire layout with Command-drag](docs/media/how-it-works.gif)
+
+*Illustrated walkthrough using the app's actual connector-routing code. Click timing is slowed for clarity. The header is AI-generated artwork.*
+
+| Gesture | Result |
+| --- | --- |
+| Left-click the trigger | Click every connected spot once, in order |
+| Option-drag from the trigger | Create a spot at the drop position |
+| Drag the trigger | Move the trigger; keep spots fixed |
+| Command-drag the trigger | Move the trigger and all spots together |
+| Right-click the trigger | Add, arrange, or remove all spots; open Settings |
+
+Both drag modifiers are rebindable in **Settings → Dragging**. The overlay has no main window or Dock icon; its menu bar icon opens Settings and enables or disables it.
+
+<details>
+<summary>Static overview</summary>
+
+![Illustrated trigger connected to four buttons, each clicked once](docs/media/overview.png)
+
+</details>
+
+## Install
+
+Requires **macOS 14 or later**, on Apple Silicon or Intel.
+
+### Homebrew
 
 ```sh
-./script/build_and_run.sh
+brew install --cask helgesverre/tap/clickmore
+open -a ClickMore
 ```
 
-The script builds and signs `dist/ClickMore.app`, then launches it. It uses an installed Apple Development signing identity when available, or an ad hoc signature otherwise. Set `CLICKMORE_SIGN_IDENTITY` to choose another identity. A consistent signature and app location help preserve Accessibility approval between builds.
+To update: `brew update && brew upgrade --cask clickmore`. To uninstall: `brew uninstall --cask clickmore`. Your saved layout is kept.
+
+### Installer or ZIP
+
+Download **[the latest release](https://github.com/HelgeSverre/clickmore/releases/latest)**. Open the universal **PKG** and follow Installer to install ClickMore in `/Applications`. The installer asks for administrator authentication. Alternatively, extract the **ZIP** and drag `ClickMore.app` into Applications. Both downloads contain the same Developer ID signed app, notarized by Apple with its ticket stapled for offline verification. SHA-256 checksums are included with each release.
+
+On first use, open **ClickMore → Settings** from the menu bar, choose **Open Accessibility Settings**, and enable ClickMore in **Privacy & Security → Accessibility**. This permission lets it send mouse clicks to other apps. The permission indicator updates automatically.
+
+### Build from source
+
+Requires **Swift 6** (Xcode 16 or newer, or equivalent command line tools). Check with `swift --version`.
+
+```sh
+git clone https://github.com/HelgeSverre/clickmore.git
+cd clickmore
+./script/build_and_run.sh --build
+
+mkdir -p "$HOME/Applications"
+ditto dist/ClickMore.app "$HOME/Applications/ClickMore.app"
+open "$HOME/Applications/ClickMore.app"
+```
+
+You can also download the source from **Code → Download ZIP**.
+
+The build script creates and signs `dist/ClickMore.app`. It uses an installed Apple Development signing identity when available, or an ad hoc signature otherwise. Set `CLICKMORE_SIGN_IDENTITY` to choose another identity. Keep the app at a consistent location and use the same signing identity for updates to help preserve Accessibility approval.
+
+To update, pull the latest code, repeat the build and copy steps, then reopen the app. For development, `./script/build_and_run.sh` builds and launches the copy in `dist/` directly.
 
 ClickMore launches as a floating overlay with a menu bar icon and no Dock icon or main window. Open Settings using the cursor icon in the menu bar, or Command-comma while a ClickMore settings or test window is active. The overlay uses transparent, borderless, nonactivating macOS panels.
 
@@ -25,7 +85,7 @@ Right-click a spot while arranging to remove it or change its click order. Plain
 
 **Remove All Click Spots** is available from the trigger's context menu and the menu bar. The menu bar also provides an **Enabled** toggle that hides the overlay and cancels an active sequence. Option-drag follows the macOS [copy-by-dragging convention](https://support.apple.com/en-gb/guide/mac-help/mh35852/mac); Shift, Command, and their combinations are also available. Control-click keeps its normal context menu behavior.
 
-The overlay uses an icon-only native material button, small target rings, and translucent circuit-style connections with rounded bends. Routing uses separate attachment points and 10-point lanes for crowded connections, inspired by [ELK's edge spacing](https://eclipse.dev/elk/reference/options/org-eclipse-elk-spacing-edgeEdge.html) and [port spacing](https://eclipse.dev/elk/reference/options/org-eclipse-elk-spacing-portPort.html). The click positions stay fixed; lines converge at targets that occupy the same position.
+The overlay uses an icon-only native material button, small target rings, and translucent circuit-style connections with rounded bends. Routing uses angular groups, separate attachment points, and ordered lanes inspired by [ELK's edge spacing](https://eclipse.dev/elk/reference/options/org-eclipse-elk-spacing-edgeEdge.html) and [port spacing](https://eclipse.dev/elk/reference/options/org-eclipse-elk-spacing-portPort.html). It aims for 10-point separation, with more clearance around larger editing targets. Spacing compresses where the geometry cannot fit it, and lines converge at overlapping targets. Click positions and click order stay fixed.
 
 VoiceOver announces the trigger's state and each spot's order and position. Its Actions menu provides adding, arranging, moving the trigger or whole layout, reordering, and removing spots. The overlay respects Reduce Transparency and Increase Contrast. While Settings has focus, the overlay passes mouse input through so it cannot cover a Settings control.
 
@@ -47,7 +107,24 @@ swift test
 ./script/test_runtime.sh --integration-test
 ```
 
-The unit tests cover press/release ordering, timing, cancellation, concurrent triggers, permission checks, persistence, display coordinates, group translation, and crowded connector routing. The local runtime test delivers AppKit events to the live test board without requiring Accessibility. The integration test requires Accessibility and launches a separate test-target app. It verifies system clicks into that process, a left-click routed through the floating trigger, preservation of the target app's focus, both rebindable drag gestures, plain dragging, clear-all, and Settings pass-through. Reports go to `test-results/`.
+The unit tests cover press/release ordering, timing, cancellation, concurrent triggers, permission checks, persistence, display coordinates, group translation, and connector routing. The routing suite exercises eight fixed stress cases and 50 reproducible random clusters with up to 64 targets, in both normal and editing modes. It checks crossings, finite geometry, endpoint placement, order independence, and translation stability. Rounded corners get a separate crossing regression check; their radius shrinks when lanes are crowded.
+
+The local runtime test delivers AppKit events to the live test board without requiring Accessibility. The integration test requires Accessibility and launches a separate test-target app. It verifies system clicks into that process, a left-click routed through the floating trigger, preservation of the target app's focus, both rebindable drag gestures, plain dragging, clear-all, and Settings pass-through. Reports go to `test-results/`. GitHub Actions runs the unit tests and builds the app on macOS.
+
+<details>
+<summary>Connector routing stress tests: before and after</summary>
+
+![Actual connector geometry before and after: screenshot regression, mixed depths, the 45-degree boundary, and four dense clusters](docs/media/routing-stress.png)
+
+The diagrams show exported routing geometry, not desktop screenshots. Reproduce the current geometry and README animation with Swift and Python 3 with Pillow installed:
+
+```sh
+./script/generate_readme_media.sh
+```
+
+The baseline captures the routing from commit `7820be3`.
+
+</details>
 
 The build script supports `--build`, `--verify`, `--debug`, `--logs`, and `--telemetry`. The Codex Run action invokes the same script. Regenerate the app icon with:
 
@@ -58,4 +135,20 @@ iconutil -c icns .build/ClickMore.iconset -o Resources/ClickMore.icns
 
 `ClickMoreCore` owns the layout, persistence, screen geometry, and cancellable click sequencer. `ClickMore` uses SwiftUI for Settings and AppKit for the menu bar, nonactivating overlay panels, and test board. Clicks use the [Core Graphics event API](https://developer.apple.com/documentation/coregraphics/cgevent); its [posting permission check](https://developer.apple.com/documentation/coregraphics/cgpreflightposteventaccess()) controls the permission indicator.
 
-This is a local development build. Some games reject synthetic input or require a longer delay; adjust the delay in Settings if necessary.
+## Build and publish a release
+
+Release packaging runs on a Mac with Xcode, a **Developer ID Application** certificate and a **Developer ID Installer** certificate (including their private keys), and a [notarytool Keychain profile](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution). Credentials stay in Keychain.
+
+1. Update the version and build number in `Resources/Info.plist`, run the tests, then commit and push to `main`.
+2. Run `CLICKMORE_NOTARY_PROFILE=your-profile ./script/package_release.sh`. The default profile name is `clickmore-notary`. Signing identities default to Liseth Solutions AS; override `CLICKMORE_RELEASE_APP_IDENTITY` and `CLICKMORE_RELEASE_PKG_IDENTITY` if needed.
+3. Run `./script/publish_release.sh` with GitHub CLI authenticated. It verifies the artifacts, tags the current commit, publishes the PKG, ZIP, and checksums, and updates the Homebrew cask directly on the tap's `main` branch.
+
+Artifacts go to `dist/releases/<version>/`. The packaging script builds both architectures, enables hardened runtime, timestamps both signatures, waits for Apple to accept the app and PKG, staples both tickets, and checks Gatekeeper. Installer relocation is disabled so updates go to `/Applications` even if a development copy exists elsewhere. The package installs only the app; it needs no installer scripts or extra entitlements. Release signing runs locally using Keychain; GitHub Actions runs tests and build checks.
+
+To test an installed release with the existing runtime harness:
+
+```sh
+CLICKMORE_TEST_APP=/Applications/ClickMore.app ./script/test_runtime.sh --integration-test
+```
+
+Some games reject synthetic input or require a longer delay; adjust the delay in Settings if necessary.

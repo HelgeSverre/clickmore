@@ -1,0 +1,24 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Swift version
+        run: swift --version
+      - name: Test core behavior and connector routing
+        run: swift test
+      - name: Build the macOS app
+        run: ./script/build_and_run.sh --build
+      - name: Check release script syntax
+        run: bash -n script/package_release.sh script/verify_release.sh script/publish_release.sh script/test_runtime.sh

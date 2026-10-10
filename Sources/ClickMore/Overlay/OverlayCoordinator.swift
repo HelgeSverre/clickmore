@@ -142,7 +142,7 @@ final class ConnectionView: NSView {
                                             triggerRadius: controller.preferences.triggerSize / 2 - 3,
                                             spotRadius: controller.editing ? 11 : 6)
         for route in routes {
-            let path = roundedPath(route.points.map(local))
+            let path = roundedPath(route.points.map(local), radius: route.cornerRadius)
             path.lineWidth = controller.editing ? 2.5 : 2
             path.lineJoinStyle = .round
             path.lineCapStyle = .round
@@ -157,7 +157,7 @@ final class ConnectionView: NSView {
         }
     }
 
-    private func roundedPath(_ points: [CGPoint]) -> NSBezierPath {
+    private func roundedPath(_ points: [CGPoint], radius: Double) -> NSBezierPath {
         let path = NSBezierPath()
         guard let first = points.first else { return path }
         path.move(to: first)
@@ -168,7 +168,7 @@ final class ConnectionView: NSView {
             let incoming = hypot(corner.x - before.x, corner.y - before.y)
             let outgoing = hypot(after.x - corner.x, after.y - corner.y)
             guard incoming > 0.01, outgoing > 0.01 else { path.line(to: corner); continue }
-            let trim = min(5, incoming / 2, outgoing / 2)
+            let trim = min(radius, incoming / 2, outgoing / 2)
             let a = CGPoint(x: corner.x + (before.x - corner.x) * trim / incoming,
                             y: corner.y + (before.y - corner.y) * trim / incoming)
             let b = CGPoint(x: corner.x + (after.x - corner.x) * trim / outgoing,

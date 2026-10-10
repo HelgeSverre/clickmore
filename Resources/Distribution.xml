@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+  <title>ClickMore</title>
+  <options customize="never" require-scripts="false" hostArchitectures="arm64,x86_64"/>
+  <domains enable_localSystem="true" enable_currentUserHome="false" enable_anywhere="false"/>
+  <allowed-os-versions><os-version min="14.0"/></allowed-os-versions>
+  <choices-outline><line choice="default"/></choices-outline>
+  <choice id="default" visible="false"><pkg-ref id="no.liseth.clickmore"/></choice>
+  <pkg-ref id="no.liseth.clickmore" version="@VERSION@" onConclusion="none">ClickMore-component.pkg</pkg-ref>
+</installer-gui-script>

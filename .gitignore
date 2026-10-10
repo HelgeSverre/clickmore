@@ -4,3 +4,5 @@ dist/
 *.xcuserstate
 .swiftpm/
 test-results/
+__pycache__/
+*.pyc

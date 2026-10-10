@@ -155,8 +155,10 @@ struct ClickMoreCoreTests {
             let spots = [3.0, 1.0, 2.0].map { ClickSpot(position: point(300, $0)) }
             let routes = ConnectorRouter.routes(trigger: point(0, 0), spots: spots, triggerRadius: 25, spotRadius: 6)
             #expect(routes.count == 3)
-            let lanes = routes.map { direction < 2 ? $0.points[2].y : $0.points[2].x }
-            #expect(abs(lanes[1] - lanes[0]) >= 10 && abs(lanes[2] - lanes[1]) >= 10)
+            // The routing axis can rotate with the cluster; measure actual
+            // perpendicular separation rather than just its x/y projection.
+            let lanes = routes.map { $0.points[2] }
+            #expect(lanes[0].distance(to: lanes[1]) >= 10 - 0.000001 && lanes[1].distance(to: lanes[2]) >= 10 - 0.000001)
             #expect(Set(routes.map { "\($0.points[0].x),\($0.points[0].y)" }).count == 3)
             #expect(routes.allSatisfy { route in
                 let spot = spots.first { $0.id == route.spotID }!
@@ -185,7 +187,7 @@ struct ClickMoreCoreTests {
         let routes = ConnectorRouter.routes(trigger: trigger, spots: spots, triggerRadius: 25, spotRadius: 6)
         #expect(routes.count == 2)
         #expect(routes.allSatisfy { $0.points[2].x > $0.points[1].x })
-        #expect(abs(routes[0].points[2].y - routes[1].points[2].y) >= 10)
+        #expect(routes[0].points[2].distance(to: routes[1].points[2]) >= 10 - 0.000001)
     }
 
     @Test func rejectsCorruptAndFutureSavedState() throws {
