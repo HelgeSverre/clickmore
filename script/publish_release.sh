@@ -30,6 +30,10 @@ else
 fi
 git push origin "$TAG"
 if ! gh release view "$TAG" --repo HelgeSverre/clickmore >/dev/null 2>&1; then
+  NOTES_SOURCE="$ROOT_DIR/docs/releases/$VERSION.md"
+  if [[ -f "$NOTES_SOURCE" ]]; then
+    cp "$NOTES_SOURCE" "$OUTPUT_DIR/release-notes.md"
+  else
   cat > "$OUTPUT_DIR/release-notes.md" <<EOF
 ClickMore turns one click on a floating trigger into an ordered click at every connected spot.
 
@@ -45,6 +49,7 @@ Option-drag creates spots; Command-drag moves the whole layout. Both modifiers c
 
 SHA256SUMS verifies both downloads. BUILD_INFO identifies the source commit. The README includes an animated walkthrough and setup instructions.
 EOF
+  fi
   gh release create "$TAG" --repo HelgeSverre/clickmore --verify-tag --title "ClickMore $VERSION" \
     --notes-file "$OUTPUT_DIR/release-notes.md" \
     "$OUTPUT_DIR/ClickMore-$VERSION-universal.pkg" \
