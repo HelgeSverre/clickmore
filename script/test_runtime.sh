@@ -28,7 +28,7 @@ if [ "$MODE" = "--integration-test" ]; then
   codesign --force --sign - "$TARGET_BUNDLE"
   rm -f "$TARGET_REPORT"
   open -n "$TARGET_BUNDLE" --args --test-target --target-report "$TARGET_REPORT"
-  for attempt in {1..50}; do
+  for _attempt in {1..50}; do
     if [ -f "$TARGET_REPORT" ]; then break; fi
     sleep 0.1
   done
@@ -37,7 +37,7 @@ if [ "$MODE" = "--integration-test" ]; then
 else
   open -n "$APP_BUNDLE" --args "$MODE" --report "$REPORT_PATH"
 fi
-for attempt in {1..50}; do
+for _attempt in {1..50}; do
   if [ -f "$REPORT_PATH" ]; then break; fi
   sleep 0.1
 done
