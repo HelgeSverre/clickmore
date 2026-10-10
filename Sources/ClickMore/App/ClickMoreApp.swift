@@ -16,7 +16,7 @@ enum ClickMoreApp {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWindowDelegate {
     private var statusItem: NSStatusItem?
-    private var settingsWindow: NSWindow?
+    private var settingsWindow: SettingsWindow?
     private var testBoard: TestBoardController?
     let controller: AppController
 
@@ -77,10 +77,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         menu.addItem(appItem)
         let editItem = NSMenuItem()
         let editMenu = NSMenu(title: "Edit")
+        editMenu.addItem(withTitle: "Undo", action: NSSelectorFromString("undo:"), keyEquivalent: "z")
+        let redo = editMenu.addItem(withTitle: "Redo", action: NSSelectorFromString("redo:"), keyEquivalent: "z")
+        redo.keyEquivalentModifierMask = [.command, .shift]
+        editMenu.addItem(.separator())
+        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
         editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
         editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         editItem.submenu = editMenu
         menu.addItem(editItem)
+        let windowItem = NSMenuItem()
+        let windowMenu = NSMenu(title: "Window")
+        windowMenu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        windowItem.submenu = windowMenu
+        menu.addItem(windowItem)
+        NSApp.windowsMenu = windowMenu
         NSApp.mainMenu = menu
     }
 
@@ -109,7 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     func openSettings() {
         if settingsWindow == nil {
-            let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 520, height: 700),
+            let window = SettingsWindow(contentRect: CGRect(x: 0, y: 0, width: 520, height: 700),
                                   styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
             window.title = "ClickMore Settings"
             window.contentView = NSHostingView(rootView: SettingsView(controller: controller))
@@ -118,8 +130,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             window.center()
             settingsWindow = window
         }
+        let wasVisible = settingsWindow?.isVisible == true
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
+        if !wasVisible, let window = settingsWindow {
+            window.makeFirstResponder(window)
+        }
         refreshSettingsFocus()
     }
 
@@ -128,16 +144,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     func windowDidBecomeKey(_ notification: Notification) { refreshSettingsFocus() }
-    func windowDidResignKey(_ notification: Notification) { refreshSettingsFocus() }
-    func windowWillClose(_ notification: Notification) { controller.setSettingsHasFocus(false) }
+    private func finishSettingsEditing() {
+        guard let window = settingsWindow else { return }
+        window.finishTextEditing()
+    }
+
+    func windowDidResignKey(_ notification: Notification) {
+        finishSettingsEditing()
+        refreshSettingsFocus()
+    }
+    func windowWillClose(_ notification: Notification) {
+        finishSettingsEditing()
+        controller.setSettingsHasFocus(false)
+    }
     func applicationDidBecomeActive(_ notification: Notification) { refreshSettingsFocus() }
-    func applicationDidResignActive(_ notification: Notification) { controller.setSettingsHasFocus(false) }
+    func applicationDidResignActive(_ notification: Notification) {
+        finishSettingsEditing()
+        controller.setSettingsHasFocus(false)
+    }
 
     func openTestBoard() {
+        finishSettingsEditing()
         if testBoard == nil { testBoard = TestBoardController(controller: controller) }
         NSApp.activate(ignoringOtherApps: true)
         testBoard?.showWindow(nil)
         testBoard?.window?.makeKeyAndOrderFront(nil)
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        finishSettingsEditing()
+        return .terminateNow
     }
 
     func applicationWillTerminate(_ notification: Notification) { controller.shutdown() }

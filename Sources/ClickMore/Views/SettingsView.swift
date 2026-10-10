@@ -4,6 +4,8 @@ import ClickMoreCore
 struct SettingsView: View {
     @Bindable var controller: AppController
     @State private var confirmClear = false
+    @FocusState private var delayHasFocus: Bool
+    @State private var delayText = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -86,15 +88,27 @@ struct SettingsView: View {
                 Section("Clicks") {
                     LabeledContent("Delay between clicks") {
                         HStack(spacing: 6) {
-                            TextField("", value: preference(\.delayMilliseconds),
-                                      format: .number.grouping(.never).precision(.fractionLength(0)))
+                            TextField("", text: $delayText)
                                 .textFieldStyle(.roundedBorder)
+                                .focused($delayHasFocus)
+                                .onSubmit {
+                                    commitDelay()
+                                    delayHasFocus = false
+                                }
+                                .onExitCommand {
+                                    delayText = formattedDelay
+                                    delayHasFocus = false
+                                }
                                 .multilineTextAlignment(.trailing)
                                 .frame(width: 64)
                                 .accessibilityLabel("Delay between clicks in milliseconds")
-                                .help("Enter a delay from 1 to 250 milliseconds.")
+                                .help("Enter 1 to 250 milliseconds. Return applies; Escape cancels.")
                             Text("ms").foregroundStyle(.secondary).fixedSize()
-                            Stepper(value: preference(\.delayMilliseconds), in: 1...250, step: 1) {
+                            Stepper(onIncrement: {
+                                adjustDelay(by: 1)
+                            }, onDecrement: {
+                                adjustDelay(by: -1)
+                            }) {
                                 EmptyView()
                             }
                                 .fixedSize()
@@ -125,6 +139,39 @@ struct SettingsView: View {
                 }
             }.formStyle(.grouped)
         }.frame(width: 520, height: 700)
+            .onAppear { delayText = formattedDelay }
+            .onReceive(NotificationCenter.default.publisher(for: SettingsWindow.finishEditingNotification)) { _ in
+                if delayHasFocus {
+                    commitDelay()
+                    delayHasFocus = false
+                }
+            }
+            .onChange(of: delayHasFocus) { _, focused in
+                if !focused { commitDelay() }
+            }
+            .onChange(of: controller.preferences.delayMilliseconds) { _, _ in
+                if !delayHasFocus { delayText = formattedDelay }
+            }
+    }
+
+    private var formattedDelay: String { String(Int(controller.preferences.delayMilliseconds)) }
+
+    private func commitDelay() {
+        if let value = Double(delayText.trimmingCharacters(in: .whitespacesAndNewlines)), value.isFinite {
+            let delay = min(max(value.rounded(), 1), 250)
+            if delay != controller.preferences.delayMilliseconds {
+                controller.updatePreferences { $0.delayMilliseconds = delay }
+            }
+        }
+        delayText = formattedDelay
+    }
+
+    private func adjustDelay(by amount: Double) {
+        // End-editing callbacks can arrive after the stepper action. Commit the draft first.
+        commitDelay()
+        controller.updatePreferences { $0.delayMilliseconds += amount }
+        delayText = formattedDelay
+        delayHasFocus = false
     }
 
     private func preference<Value>(_ path: WritableKeyPath<Preferences, Value>) -> Binding<Value> {
