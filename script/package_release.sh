@@ -50,6 +50,7 @@ mkdir -p "$APP_BUNDLE/Contents/MacOS" "$APP_BUNDLE/Contents/Resources"
 cp "$BUILD_DIR/ClickMore" "$APP_BUNDLE/Contents/MacOS/ClickMore"
 cp Resources/Info.plist "$APP_BUNDLE/Contents/Info.plist"
 cp Resources/ClickMore.icns "$APP_BUNDLE/Contents/Resources/ClickMore.icns"
+./script/stage_package_resources.sh "$BUILD_DIR" "$APP_BUNDLE"
 plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP_BUNDLE/Contents/Info.plist"
 if [[ -n "${CLICKMORE_BUILD_NUMBER:-}" ]]; then
   plutil -replace CFBundleVersion -string "$CLICKMORE_BUILD_NUMBER" "$APP_BUNDLE/Contents/Info.plist"

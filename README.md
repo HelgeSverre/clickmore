@@ -169,3 +169,9 @@ python3 -m http.server 8099 --directory website --bind 127.0.0.1
 ```
 
 Open <http://127.0.0.1:8099>. The page is static and can be hosted without a build step.
+
+## Permission setup
+
+When mouse access is missing, ClickMore highlights the Mouse access section in Settings. Choose **Open Accessibility Settings…** to show a floating helper, then drag ClickMore into the Accessibility list and enable its switch. The helper closes after access is granted. Reduce Motion uses a steady highlight.
+
+The helper uses [PermissionFlow](https://github.com/jaywcjlove/PermissionFlow), licensed under MIT. Its license is included in the distributed app’s `Contents/Resources/ThirdPartyNotices.txt`.

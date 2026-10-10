@@ -2,6 +2,7 @@ import AppKit
 import Observation
 import OSLog
 import ClickMoreCore
+import PermissionFlow
 
 @MainActor @Observable
 final class AppController {
@@ -10,6 +11,7 @@ final class AppController {
     private(set) var editing = false
     private(set) var firing = false
     private(set) var permissionGranted = CGPreflightPostEventAccess()
+    private(set) var permissionAttentionRequest = 0
     var message: String?
     var showSettings: (() -> Void)?
     var showTestBoard: (() -> Void)?
@@ -20,6 +22,8 @@ final class AppController {
     @ObservationIgnored private lazy var sequencer = ClickSequencer(poster: poster)
     @ObservationIgnored private var fireTask: Task<Void, Never>?
     @ObservationIgnored private var permissionTimer: Timer?
+    @ObservationIgnored private lazy var permissionGuide = PermissionFlow.makeController(
+        configuration: .init(requiredAppURLs: [Bundle.main.bundleURL], promptForAccessibilityTrust: false))
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private var screenObserver: NSObjectProtocol?
     @ObservationIgnored private var accessibilityObserver: NSObjectProtocol?
@@ -81,6 +85,7 @@ final class AppController {
         cancelSequence()
         sequencer.releaseHeldButton()
         permissionTimer?.invalidate()
+        permissionGuide.closePanel()
         saveTask?.cancel()
         if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
         if let accessibilityObserver { NSWorkspace.shared.notificationCenter.removeObserver(accessibilityObserver) }
@@ -91,13 +96,15 @@ final class AppController {
         let granted = CGPreflightPostEventAccess()
         if granted != permissionGranted {
             permissionGranted = granted
+            if granted { permissionGuide.closePanel() }
             overlays.refresh()
         }
     }
 
     func requestPermission() {
-        _ = CGRequestPostEventAccess()
-        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+        showSettings?()
+        permissionAttentionRequest &+= 1
+        permissionGuide.authorize(pane: .accessibility, suggestedAppURLs: [Bundle.main.bundleURL])
     }
 
     func updatePreferences(_ update: (inout Preferences) -> Void) {
@@ -185,7 +192,11 @@ final class AppController {
             return
         }
         refreshPermission()
-        guard permissionGranted else { showSettings?(); return }
+        guard permissionGranted else {
+            showSettings?()
+            permissionAttentionRequest &+= 1
+            return
+        }
         // Snapshot the entire batch. Editing and disabling cancel it rather than
         // changing target coordinates halfway through a press/release pair.
         let points = activeSpots.map(\.position)

@@ -16,6 +16,10 @@ pkgutil --expand-full "$PKG" "$VERIFY_DIR/pkg"
 APP="$VERIFY_DIR/zip/ClickMore.app"
 PKG_APP="$VERIFY_DIR/pkg/ClickMore-component.pkg/Payload/Applications/ClickMore.app"
 for bundle in "$APP" "$PKG_APP"; do
+  # Older immutable releases predate the permission helper.
+  if [[ -f "$bundle/Contents/Resources/ThirdPartyNotices.txt" ]]; then
+    test -d "$bundle/Contents/Resources/PermissionFlow_PermissionFlow.bundle"
+  fi
   codesign --verify --strict --verbose=2 "$bundle"
   lipo "$bundle/Contents/MacOS/ClickMore" -verify_arch arm64 x86_64
   test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$bundle/Contents/Info.plist")" = "$VERSION"

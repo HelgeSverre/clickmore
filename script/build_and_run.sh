@@ -11,14 +11,17 @@ case "$MODE" in
   *) echo "Usage: $0 [--build|--verify|--logs|--telemetry|--debug]" >&2; exit 2 ;;
 esac
 pkill -x ClickMore >/dev/null 2>&1 || true
-swift build --product ClickMore
-BUILD_DIR="$(swift build --show-bin-path)"
+# Xcode's SwiftPM backend resolves package resources inside a signed macOS app.
+BUILD_ARGS=(--build-system xcode --scratch-path .build/development)
+swift build "${BUILD_ARGS[@]}" --product ClickMore
+BUILD_DIR="$(swift build "${BUILD_ARGS[@]}" --show-bin-path)"
 mkdir -p "$APP_BUNDLE/Contents/MacOS" "$APP_BUNDLE/Contents/Resources"
 cp "$BUILD_DIR/ClickMore" "$APP_BUNDLE/Contents/MacOS/ClickMore"
 cp Resources/Info.plist "$APP_BUNDLE/Contents/Info.plist"
 if [ -f Resources/ClickMore.icns ]; then
   cp Resources/ClickMore.icns "$APP_BUNDLE/Contents/Resources/ClickMore.icns"
 fi
+./script/stage_package_resources.sh "$BUILD_DIR" "$APP_BUNDLE"
 SIGN_IDENTITY="${CLICKMORE_SIGN_IDENTITY:--}"
 SIGN_IDENTITIES="$(security find-identity -v -p codesigning)"
 if [ "$SIGN_IDENTITY" = "-" ] && [[ "$SIGN_IDENTITIES" == *'Apple Development:'* ]]; then
