@@ -86,16 +86,19 @@ struct SettingsView: View {
                 Section("Clicks") {
                     LabeledContent("Delay between clicks") {
                         HStack(spacing: 6) {
-                            TextField("Delay between clicks", value: preference(\.delayMilliseconds),
+                            TextField("", value: preference(\.delayMilliseconds),
                                       format: .number.grouping(.never).precision(.fractionLength(0)))
                                 .textFieldStyle(.roundedBorder)
                                 .multilineTextAlignment(.trailing)
                                 .frame(width: 64)
                                 .accessibilityLabel("Delay between clicks in milliseconds")
                                 .help("Enter a delay from 1 to 250 milliseconds.")
-                            Text("ms").foregroundStyle(.secondary)
-                            Stepper("Delay between clicks", value: preference(\.delayMilliseconds), in: 1...250, step: 1)
-                                .labelsHidden()
+                            Text("ms").foregroundStyle(.secondary).fixedSize()
+                            Stepper(value: preference(\.delayMilliseconds), in: 1...250, step: 1) {
+                                EmptyView()
+                            }
+                                .fixedSize()
+                                .accessibilityLabel("Adjust delay between clicks")
                                 .accessibilityValue("\(Int(controller.preferences.delayMilliseconds)) milliseconds")
                         }
                     }
