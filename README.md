@@ -3,6 +3,7 @@
 # ClickMore
 
 [![Build and test](https://github.com/HelgeSverre/clickmore/actions/workflows/ci.yml/badge.svg)](https://github.com/HelgeSverre/clickmore/actions/workflows/ci.yml)
+[![Signed release](https://github.com/HelgeSverre/clickmore/actions/workflows/release.yml/badge.svg)](https://github.com/HelgeSverre/clickmore/actions/workflows/release.yml)
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-222222?logo=apple&logoColor=white)
 ![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
 ![Native AppKit + SwiftUI](https://img.shields.io/badge/UI-AppKit%20%2B%20SwiftUI-0C8991)
@@ -145,7 +146,7 @@ GitHub Actions builds and publishes signed releases automatically when a version
 
 Published versions are immutable. Retries download and verify existing artifacts before retrying the tap update. Use a new version for a new build. Release runs are serialized and only run from `main`; pull requests run the separate build-and-test workflow without release secrets.
 
-The repository's encrypted Actions secrets hold `CLICKMORE_APP_P12_BASE64`, `CLICKMORE_INSTALLER_P12_BASE64`, `CLICKMORE_P12_PASSWORD`, `CLICKMORE_NOTARY_APPLE_ID`, `CLICKMORE_NOTARY_PASSWORD`, `CLICKMORE_NOTARY_TEAM_ID`, and `CLICKMORE_TAP_DEPLOY_KEY`. The workflow imports signing credentials into a temporary Keychain and removes it afterward. The tap uses its own repository-scoped write deploy key; GitHub's per-run token publishes the app release. Never commit private keys or passwords.
+The repository's encrypted Actions secrets hold `APPLE_APPLICATION_CERTIFICATE_BASE64`, `APPLE_APPLICATION_CERTIFICATE_PASSWORD`, `APPLE_INSTALLER_CERTIFICATE_BASE64`, `APPLE_INSTALLER_CERTIFICATE_PASSWORD`, `APPLE_NOTARY_KEY_BASE64`, and `CLICKMORE_TAP_DEPLOY_KEY`. Notarization uses the same App Store Connect team API key convention as Splash, Memory Left, and Space Left. Repository variables store `APPLE_APPLICATION_SIGNING_IDENTITY`, `APPLE_INSTALLER_SIGNING_IDENTITY`, `APPLE_NOTARY_KEY_ID`, and `APPLE_NOTARY_ISSUER_ID`. The workflow imports signing credentials into a temporary Keychain, writes the API key to a private temporary file, and removes both afterward. The tap uses its own repository-scoped write deploy key; GitHub's per-run token publishes the app release. Never commit private keys or passwords.
 
 Artifacts go to `dist/releases/<version>/`. Installer relocation is disabled so updates go to `/Applications` even if a development copy exists elsewhere. The package installs only the app; it needs no installer scripts or extra entitlements.
 

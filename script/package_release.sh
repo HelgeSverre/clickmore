@@ -24,9 +24,12 @@ APP_BUNDLE="$WORK_DIR/payload/Applications/ClickMore.app"
 PKG_NAME="ClickMore-$VERSION-universal.pkg"
 ZIP_NAME="ClickMore-$VERSION-universal.zip"
 mkdir -p "$WORK_DIR" "$OUTPUT_DIR"
-NOTARY_ARGS=(--keychain-profile "$NOTARY_PROFILE")
-if [[ -n "${CLICKMORE_NOTARY_KEYCHAIN:-}" ]]; then
-  NOTARY_ARGS+=(--keychain "$CLICKMORE_NOTARY_KEYCHAIN")
+if [[ -n "${APPLE_NOTARY_KEY_PATH:-}" ]]; then
+  : "${APPLE_NOTARY_KEY_ID:?}"
+  : "${APPLE_NOTARY_ISSUER_ID:?}"
+  NOTARY_ARGS=(--key "$APPLE_NOTARY_KEY_PATH" --key-id "$APPLE_NOTARY_KEY_ID" --issuer "$APPLE_NOTARY_ISSUER_ID")
+else
+  NOTARY_ARGS=(--keychain-profile "$NOTARY_PROFILE")
 fi
 # Fail before building if the credentials or either private key are unavailable.
 xcrun notarytool history "${NOTARY_ARGS[@]}" --output-format json > "$WORK_DIR/notary-history.json"
