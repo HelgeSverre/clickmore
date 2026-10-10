@@ -13,7 +13,11 @@ fi
 SOURCE_COMMIT="$(git rev-parse HEAD)"
 APP_IDENTITY="${CLICKMORE_RELEASE_APP_IDENTITY:-Developer ID Application: Liseth Solutions AS (9Z2L5FBZS3)}"
 PKG_IDENTITY="${CLICKMORE_RELEASE_PKG_IDENTITY:-Developer ID Installer: Liseth Solutions AS (9Z2L5FBZS3)}"
-NOTARY_PROFILE="${CLICKMORE_NOTARY_PROFILE:-clickmore-notary}"
+NOTARY_PROFILE="${CLICKMORE_NOTARY_PROFILE:-}"
+if [[ -z "$NOTARY_PROFILE" && -f "$ROOT_DIR/.clickmore-release.json" ]]; then
+  NOTARY_PROFILE="$(plutil -extract notaryProfile raw -o - "$ROOT_DIR/.clickmore-release.json")"
+fi
+NOTARY_PROFILE="${NOTARY_PROFILE:-clickmore-notary}"
 WORK_DIR="$ROOT_DIR/.build/release-package/$VERSION"
 OUTPUT_DIR="$ROOT_DIR/dist/releases/$VERSION"
 APP_BUNDLE="$WORK_DIR/payload/Applications/ClickMore.app"

@@ -145,6 +145,8 @@ Release packaging runs on a Mac with Xcode, a **Developer ID Application** certi
 
 Artifacts go to `dist/releases/<version>/`. The packaging script builds both architectures, enables hardened runtime, timestamps both signatures, waits for Apple to accept the app and PKG, staples both tickets, and checks Gatekeeper. Installer relocation is disabled so updates go to `/Applications` even if a development copy exists elsewhere. The package installs only the app; it needs no installer scripts or extra entitlements. Release signing runs locally using Keychain; GitHub Actions runs tests and build checks.
 
+To remember an existing Keychain profile on your release Mac, save `{"notaryProfile":"your-profile"}` in `.clickmore-release.json` at the repository root. This local configuration is ignored by Git; `CLICKMORE_NOTARY_PROFILE` takes precedence. Store only the profile name here, never credentials.
+
 To test an installed release with the existing runtime harness:
 
 ```sh
