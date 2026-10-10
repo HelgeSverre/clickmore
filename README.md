@@ -159,3 +159,13 @@ CLICKMORE_TEST_APP=/Applications/ClickMore.app ./script/test_runtime.sh --integr
 ```
 
 Some games reject synthetic input or require a longer delay; adjust the delay in Settings if necessary.
+
+## Website
+
+The landing page lives in [`website/`](website/). Preview it with:
+
+```sh
+python3 -m http.server 8099 --directory website --bind 127.0.0.1
+```
+
+Open <http://127.0.0.1:8099>. The page is static and can be hosted without a build step.

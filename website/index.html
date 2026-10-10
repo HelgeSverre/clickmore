@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="ClickMore turns one click into clicks at every connected spot. A native macOS overlay for clicker games and repetitive clicking."
+    />
+    <meta name="author" content="Helge Sverre" />
+    <meta name="application-name" content="ClickMore" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ClickMore" />
+    <meta property="og:title" content="ClickMore — One click. Every button." />
+    <meta
+      property="og:description"
+      content="Place a floating trigger, connect your click spots, and click them all with one press. Native to macOS."
+    />
+    <meta
+      property="og:image"
+      content="https://raw.githubusercontent.com/HelgeSverre/clickmore/main/docs/media/header.png"
+    />
+    <meta property="og:image:alt" content="ClickMore — one click, every spot" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ClickMore — One click. Every button." />
+    <meta
+      name="twitter:image"
+      content="https://raw.githubusercontent.com/HelgeSverre/clickmore/main/docs/media/header.png"
+    />
+    <title>ClickMore — One click. Every button.</title>
+    <link rel="icon" href="favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="app-icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="demo.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <main id="main">
+      <div class="split">
+        <section class="copy" aria-labelledby="headline">
+          <div class="lockup">
+            <img src="app-icon.png" alt="" width="256" height="256" />
+            <span class="wordmark">ClickMore</span>
+          </div>
+          <h1 id="headline">One click.<br />Every button.</h1>
+          <p class="intro">
+            Place a floating trigger. Connect your click spots. One press clicks
+            them all, wherever they are on your screen.
+          </p>
+          <div class="download-area">
+            <a
+              class="download"
+              href="https://github.com/HelgeSverre/clickmore/releases/latest"
+              ><span>Download for macOS</span
+              ><span aria-hidden="true">↓</span></a
+            >
+            <p class="requirements">
+              macOS 14+ · Apple Silicon and Intel<br />Free · Signed &amp;
+              Apple-notarized
+            </p>
+          </div>
+          <div class="brew">
+            <code>brew install --cask helgesverre/tap/clickmore</code>
+            <button
+              id="copy-command"
+              type="button"
+              aria-label="Copy Homebrew install command"
+              hidden
+            >
+              <svg
+                viewBox="0 0 20 20"
+                width="16"
+                height="16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <rect x="7" y="7" width="10" height="10" rx="2" />
+                <path d="M12 4V3H3v9h1" />
+              </svg>
+            </button>
+          </div>
+          <p id="copy-status" class="copy-status" role="status"></p>
+        </section>
+        <figure class="preview" aria-labelledby="demo-caption">
+          <div class="demo-top">
+            <span class="demo-eyebrow">FOUR SPOTS. ONE TRIGGER.</span
+            ><button id="reset-demo" type="button" hidden>Reset</button>
+          </div>
+          <div class="board">
+            <svg
+              class="wires"
+              viewBox="0 0 460 420"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path d="M216 199V164Q216 152 204 152H124Q112 152 112 140V101" />
+              <path d="M244 199V164Q244 152 256 152H336Q348 152 348 140V101" />
+              <path d="M216 221V256Q216 268 204 268H124Q112 268 112 280V319" />
+              <path d="M244 221V256Q244 268 256 268H336Q348 268 348 280V319" />
+            </svg>
+            <div class="targets">
+              <div class="target ice">
+                <span class="target-name">Ice</span
+                ><svg class="ingredient" viewBox="0 0 40 40" aria-hidden="true">
+                  <path
+                    d="m20 4 14 8v16l-14 8-14-8V12zM6 12l14 8 14-8M20 20v16"
+                  /></svg
+                ><span class="count" aria-hidden="true">0</span
+                ><span class="spot" aria-hidden="true"></span>
+              </div>
+              <div class="target sugar">
+                <span class="target-name">Sugar</span
+                ><svg class="ingredient" viewBox="0 0 40 40" aria-hidden="true">
+                  <path
+                    d="M13 5h14v14H13zM5 21h14v14H5zM21 21h14v14H21z"
+                  /></svg
+                ><span class="count" aria-hidden="true">0</span
+                ><span class="spot" aria-hidden="true"></span>
+              </div>
+              <div class="target glass">
+                <span class="target-name">Glass</span
+                ><svg class="ingredient" viewBox="0 0 40 40" aria-hidden="true">
+                  <path d="M10 7h20l-3 28H13zM11 15h18" /></svg
+                ><span class="count" aria-hidden="true">0</span
+                ><span class="spot" aria-hidden="true"></span>
+              </div>
+              <div class="target lemon">
+                <span class="target-name">Lemon</span
+                ><svg class="ingredient" viewBox="0 0 40 40" aria-hidden="true">
+                  <path
+                    d="M8 29C2 23 11 7 24 7l6-3 1 6c10 8-2 24-13 23l-6 3zM14 17c2-3 5-5 9-5"
+                  /></svg
+                ><span class="count" aria-hidden="true">0</span
+                ><span class="spot" aria-hidden="true"></span>
+              </div>
+            </div>
+            <button
+              id="trigger"
+              class="trigger"
+              type="button"
+              aria-label="Try ClickMore: click all four spots"
+              aria-describedby="demo-caption"
+              disabled
+            >
+              <svg
+                viewBox="0 0 32 32"
+                width="30"
+                height="30"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="m10 8 13 10-7 1-3 7-3-18z"
+                  fill="currentColor"
+                  stroke="currentColor"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M8 3v2M3 8h2M5 4l2 2M18 4l-2 2"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+          <figcaption id="demo-caption">
+            <span class="hint">Click the trigger. Watch all four respond.</span
+            ><span class="demo-note"
+              >Interactive illustration · timing slowed for clarity</span
+            >
+          </figcaption>
+          <p id="demo-status" class="sr-only" role="status">
+            All four counters are zero.
+          </p>
+          <noscript
+            ><p class="demo-note">
+              Enable JavaScript to try the interactive illustration.
+            </p></noscript
+          >
+        </figure>
+      </div>
+      <section class="details" aria-label="How ClickMore works">
+        <div>
+          <span class="detail-label"
+            ><kbd aria-label="Option">⌥</kbd> Drag to add</span
+          >
+          <p>Pull a spot from the trigger and drop it on a button.</p>
+        </div>
+        <div>
+          <span class="detail-label"
+            ><kbd aria-label="Command">⌘</kbd> Move together</span
+          >
+          <p>
+            Move the trigger and every spot as one. Both shortcuts are
+            rebindable.
+          </p>
+        </div>
+        <div>
+          <span class="detail-label"
+            ><svg
+              viewBox="0 0 20 20"
+              width="20"
+              height="20"
+              fill="none"
+              aria-hidden="true"
+            >
+              <rect x="3" y="3" width="14" height="14" rx="4" />
+              <path d="M6 7h8M6 10h5" /></svg
+            >Made for your Mac</span
+          >
+          <p>
+            A persistent overlay with VoiceOver support. Controls live in the
+            menu bar.
+          </p>
+        </div>
+      </section>
+      <div class="setup-note">
+        Allow ClickMore in
+        <span>System Settings → Privacy &amp; Security → Accessibility</span> to
+        click other apps.
+      </div>
+      <footer>
+        <a href="https://helgesver.re">© 2026 Helge Sverre</a>
+        <nav aria-label="More about ClickMore">
+          <a href="https://github.com/HelgeSverre/clickmore">GitHub</a
+          ><a href="https://github.com/HelgeSverre/clickmore/releases"
+            >Releases</a
+          ><a
+            href="https://github.com/HelgeSverre/clickmore#place-and-use-click-spots"
+            >How to use</a
+          >
+        </nav>
+      </footer>
+    </main>
+  </body>
+</html>
