@@ -84,8 +84,20 @@ struct SettingsView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Clicks") {
-                    Stepper(value: preference(\.delayMilliseconds), in: 1...250, step: 1) {
-                        LabeledContent("Delay between clicks", value: "\(Int(controller.preferences.delayMilliseconds)) ms")
+                    LabeledContent("Delay between clicks") {
+                        HStack(spacing: 6) {
+                            TextField("Delay between clicks", value: preference(\.delayMilliseconds),
+                                      format: .number.grouping(.never).precision(.fractionLength(0)))
+                                .textFieldStyle(.roundedBorder)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 64)
+                                .accessibilityLabel("Delay between clicks in milliseconds")
+                                .help("Enter a delay from 1 to 250 milliseconds.")
+                            Text("ms").foregroundStyle(.secondary)
+                            Stepper("Delay between clicks", value: preference(\.delayMilliseconds), in: 1...250, step: 1)
+                                .labelsHidden()
+                                .accessibilityValue("\(Int(controller.preferences.delayMilliseconds)) milliseconds")
+                        }
                     }
                     Toggle("Return pointer after clicking", isOn: preference(\.restorePointer))
                 }
