@@ -137,15 +137,19 @@ iconutil -c icns .build/ClickMore.iconset -o Resources/ClickMore.icns
 
 ## Build and publish a release
 
-Release packaging runs on a Mac with Xcode, a **Developer ID Application** certificate and a **Developer ID Installer** certificate (including their private keys), and a [notarytool Keychain profile](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution). Credentials stay in Keychain.
+GitHub Actions builds and publishes signed releases automatically when a version change in `Resources/Info.plist` is pushed to `main`. You can also run **Signed release** from the Actions tab to retry or release the current version.
 
-1. Update the version and build number in `Resources/Info.plist`, run the tests, then commit and push to `main`.
-2. Run `CLICKMORE_NOTARY_PROFILE=your-profile ./script/package_release.sh`. The default profile name is `clickmore-notary`. Signing identities default to Liseth Solutions AS; override `CLICKMORE_RELEASE_APP_IDENTITY` and `CLICKMORE_RELEASE_PKG_IDENTITY` if needed.
-3. Run `./script/publish_release.sh` with GitHub CLI authenticated. It verifies the artifacts, tags the current commit, publishes the PKG, ZIP, and checksums, and updates the Homebrew cask directly on the tap's `main` branch.
+1. Update `CFBundleShortVersionString` and `CFBundleVersion` in `Resources/Info.plist`.
+2. Commit and push to `main`.
+3. The workflow runs tests, builds for Apple Silicon and Intel, signs with Developer ID, notarizes the app and PKG, staples Apple's tickets, verifies both downloads, publishes a GitHub release and tag, and updates the Homebrew cask.
 
-Artifacts go to `dist/releases/<version>/`. The packaging script builds both architectures, enables hardened runtime, timestamps both signatures, waits for Apple to accept the app and PKG, staples both tickets, and checks Gatekeeper. Installer relocation is disabled so updates go to `/Applications` even if a development copy exists elsewhere. The package installs only the app; it needs no installer scripts or extra entitlements. Release signing runs locally using Keychain; GitHub Actions runs tests and build checks.
+Published versions are immutable. Retries download and verify existing artifacts before retrying the tap update. Use a new version for a new build. Release runs are serialized and only run from `main`; pull requests run the separate build-and-test workflow without release secrets.
 
-To remember an existing Keychain profile on your release Mac, save `{"notaryProfile":"your-profile"}` in `.clickmore-release.json` at the repository root. This local configuration is ignored by Git; `CLICKMORE_NOTARY_PROFILE` takes precedence. Store only the profile name here, never credentials.
+The repository's encrypted Actions secrets hold `CLICKMORE_APP_P12_BASE64`, `CLICKMORE_INSTALLER_P12_BASE64`, `CLICKMORE_P12_PASSWORD`, `CLICKMORE_NOTARY_APPLE_ID`, `CLICKMORE_NOTARY_PASSWORD`, `CLICKMORE_NOTARY_TEAM_ID`, and `CLICKMORE_TAP_DEPLOY_KEY`. The workflow imports signing credentials into a temporary Keychain and removes it afterward. The tap uses its own repository-scoped write deploy key; GitHub's per-run token publishes the app release. Never commit private keys or passwords.
+
+Artifacts go to `dist/releases/<version>/`. Installer relocation is disabled so updates go to `/Applications` even if a development copy exists elsewhere. The package installs only the app; it needs no installer scripts or extra entitlements.
+
+Local releases remain supported: run `CLICKMORE_NOTARY_PROFILE=your-profile ./script/package_release.sh`, then `./script/publish_release.sh` with GitHub CLI authenticated. The Mac needs Xcode, Developer ID Application and Installer identities (including private keys), and a [notarytool Keychain profile](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution). The default profile is `clickmore-notary`; an ignored `.clickmore-release.json` file can remember a different profile as `{"notaryProfile":"your-profile"}`. Environment variables take precedence.
 
 To test an installed release with the existing runtime harness:
 

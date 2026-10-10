@@ -53,7 +53,15 @@ fi
 
 TAP_DIR="${CLICKMORE_TAP_DIR:-$ROOT_DIR/.build/homebrew-tap-release}"
 if [[ ! -d "$TAP_DIR/.git" ]]; then
-  gh repo clone HelgeSverre/homebrew-tap "$TAP_DIR"
+  if [[ -n "${CLICKMORE_TAP_SSH_COMMAND:-}" ]]; then
+    GIT_SSH_COMMAND="$CLICKMORE_TAP_SSH_COMMAND" git clone git@github.com:HelgeSverre/homebrew-tap.git "$TAP_DIR"
+  else
+    gh repo clone HelgeSverre/homebrew-tap "$TAP_DIR"
+  fi
+fi
+# The tap deploy key is scoped to this repository; never use it for app pushes.
+if [[ -n "${CLICKMORE_TAP_SSH_COMMAND:-}" ]]; then
+  export GIT_SSH_COMMAND="$CLICKMORE_TAP_SSH_COMMAND"
 fi
 test -z "$(git -C "$TAP_DIR" status --porcelain)"
 git -C "$TAP_DIR" checkout main

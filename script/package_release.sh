@@ -24,8 +24,12 @@ APP_BUNDLE="$WORK_DIR/payload/Applications/ClickMore.app"
 PKG_NAME="ClickMore-$VERSION-universal.pkg"
 ZIP_NAME="ClickMore-$VERSION-universal.zip"
 mkdir -p "$WORK_DIR" "$OUTPUT_DIR"
+NOTARY_ARGS=(--keychain-profile "$NOTARY_PROFILE")
+if [[ -n "${CLICKMORE_NOTARY_KEYCHAIN:-}" ]]; then
+  NOTARY_ARGS+=(--keychain "$CLICKMORE_NOTARY_KEYCHAIN")
+fi
 # Fail before building if the credentials or either private key are unavailable.
-xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" --output-format json > "$WORK_DIR/notary-history.json"
+xcrun notarytool history "${NOTARY_ARGS[@]}" --output-format json > "$WORK_DIR/notary-history.json"
 IDENTITIES="$(security find-identity -v -p basic)"
 for identity in "$APP_IDENTITY" "$PKG_IDENTITY"; do
   if [[ "$IDENTITIES" != *"\"$identity\""* ]]; then
@@ -55,10 +59,10 @@ codesign --verify --strict --verbose=2 "$APP_BUNDLE"
 submit() {
   local artifact="$1" report="$2" status submission
   echo "Submitting $(basename "$artifact") to Apple…"
-  xcrun notarytool submit "$artifact" --keychain-profile "$NOTARY_PROFILE" --wait --output-format json > "$report"
+  xcrun notarytool submit "$artifact" "${NOTARY_ARGS[@]}" --wait --output-format json > "$report"
   status="$(plutil -extract status raw -o - "$report")"
   submission="$(plutil -extract id raw -o - "$report")"
-  xcrun notarytool log "$submission" --keychain-profile "$NOTARY_PROFILE" "$report.log.json"
+  xcrun notarytool log "$submission" "${NOTARY_ARGS[@]}" "$report.log.json"
   if [[ "$status" != "Accepted" ]]; then
     echo "Apple notarization returned $status. See $report.log.json" >&2; exit 1
   fi
