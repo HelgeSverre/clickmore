@@ -37,12 +37,12 @@ if [ "$MODE" = "--integration-test" ]; then
 else
   open -n "$APP_BUNDLE" --args "$MODE" --report "$REPORT_PATH"
 fi
-for _attempt in {1..50}; do
+for _attempt in {1..300}; do
   if [ -f "$REPORT_PATH" ]; then break; fi
   sleep 0.1
 done
 if [ ! -f "$REPORT_PATH" ]; then
-  echo "ClickMore did not produce its verification report." >&2
+  echo "ClickMore did not produce its verification report. Complete any macOS first-launch prompt and retry." >&2
   exit 1
 fi
 cat "$REPORT_PATH"
