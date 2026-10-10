@@ -12,13 +12,14 @@ if [[ -n "$(git status --porcelain)" ]] || [[ "$(git branch --show-current)" != 
 fi
 git fetch origin main
 test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
-test "$(sed -n 's/^commit=//p' "$OUTPUT_DIR/BUILD_INFO")" = "$(git rev-parse HEAD)"
+SOURCE_COMMIT="$(sed -n 's/^commit=//p' "$OUTPUT_DIR/BUILD_INFO")"
 ./script/verify_release.sh "$VERSION"
 gh auth status >/dev/null
 
 if git rev-parse "$TAG" >/dev/null 2>&1; then
-  test "$(git rev-parse "$TAG^{commit}")" = "$(git rev-parse HEAD)"
+  test "$(git rev-parse "$TAG^{commit}")" = "$SOURCE_COMMIT"
 else
+  test "$SOURCE_COMMIT" = "$(git rev-parse HEAD)"
   git tag -a "$TAG" -m "ClickMore $VERSION"
 fi
 git push origin "$TAG"
@@ -60,6 +61,8 @@ git -C "$TAP_DIR" pull --ff-only origin main
 ZIP_SHA="$(shasum -a 256 "$OUTPUT_DIR/ClickMore-$VERSION-universal.zip" | awk '{print $1}')"
 mkdir -p "$TAP_DIR/Casks"
 cat > "$TAP_DIR/Casks/clickmore.rb" <<EOF
+# frozen_string_literal: true
+
 cask "clickmore" do
   version "$VERSION"
   sha256 "$ZIP_SHA"
