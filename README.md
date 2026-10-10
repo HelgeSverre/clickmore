@@ -142,7 +142,7 @@ GitHub Actions builds and publishes signed releases automatically when a version
 
 1. Update `CFBundleShortVersionString` and `CFBundleVersion` in `Resources/Info.plist`.
 2. Commit and push to `main`.
-3. The workflow runs tests, builds for Apple Silicon and Intel, signs with Developer ID, notarizes the app and PKG, staples Apple's tickets, verifies both downloads, publishes a GitHub release and tag, and updates the Homebrew cask.
+3. The workflow runs tests, builds for Apple Silicon and Intel, signs with Developer ID, notarizes the app and PKG, staples Apple's tickets, verifies both downloads, publishes a GitHub release and tag, updates the Homebrew cask, and tests both installation methods on the runner.
 
 Published versions are immutable. Retries download and verify existing artifacts before retrying the tap update. Use a new version for a new build. Release runs are serialized and only run from `main`; pull requests run the separate build-and-test workflow without release secrets.
 

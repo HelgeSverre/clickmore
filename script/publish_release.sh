@@ -11,7 +11,13 @@ if [[ -n "$(git status --porcelain)" ]] || [[ "$(git branch --show-current)" != 
   echo "Publish from a clean main branch." >&2; exit 1
 fi
 git fetch origin main
-test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  # Release the tested event snapshot even when another commit reaches main.
+  test "$(git rev-parse HEAD)" = "${GITHUB_SHA:?}"
+  git merge-base --is-ancestor HEAD origin/main
+else
+  test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+fi
 SOURCE_COMMIT="$(sed -n 's/^commit=//p' "$OUTPUT_DIR/BUILD_INFO")"
 ./script/verify_release.sh "$VERSION"
 gh auth status >/dev/null
