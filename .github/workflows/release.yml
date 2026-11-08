@@ -81,8 +81,8 @@ jobs:
           RELEASE_VERSION: ${{ steps.version.outputs.value }}
           TAP_DEPLOY_KEY: ${{ secrets.CLICKMORE_TAP_DEPLOY_KEY }}
         run: |
-          umask 077
           test -n "$TAP_DEPLOY_KEY"
+          install -m 600 /dev/null "$RUNNER_TEMP/clickmore-tap-key"
           printf '%s\n' "$TAP_DEPLOY_KEY" > "$RUNNER_TEMP/clickmore-tap-key"
           # Trust GitHub's published host keys, never an unauthenticated ssh-keyscan.
           gh api meta --jq '.ssh_keys[] | "github.com " + .' > "$RUNNER_TEMP/clickmore-known-hosts"

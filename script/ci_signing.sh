@@ -2,10 +2,11 @@
 # Import release credentials into a temporary GitHub-hosted runner keychain.
 # Both Application and Installer identities are required for the app and PKG.
 set -euo pipefail
-umask 077
 : "${RUNNER_TEMP:?This script is for GitHub-hosted runners}"
 APPLE_SIGNING_KEYCHAIN="$RUNNER_TEMP/clickmore-signing.keychain-db"
 APPLE_NOTARY_KEY_PATH="$RUNNER_TEMP/clickmore-notary.p8"
+certificate="$RUNNER_TEMP/clickmore-signing.p12"
+installer="$RUNNER_TEMP/clickmore-installer.p12"
 
 for name in RUNNER_TEMP APPLE_APPLICATION_CERTIFICATE_BASE64 \
   APPLE_APPLICATION_CERTIFICATE_PASSWORD APPLE_APPLICATION_SIGNING_IDENTITY \
@@ -17,20 +18,23 @@ for name in RUNNER_TEMP APPLE_APPLICATION_CERTIFICATE_BASE64 \
   fi
 done
 
-if [[ -e "$APPLE_SIGNING_KEYCHAIN" || -e "$APPLE_NOTARY_KEY_PATH" ]]; then
+if [[ -e "$APPLE_SIGNING_KEYCHAIN" || -e "$APPLE_NOTARY_KEY_PATH" || -e "$certificate" || -e "$installer" ]]; then
   echo "Refusing to overwrite existing signing assets" >&2
   exit 1
 fi
 
-certificate="$RUNNER_TEMP/clickmore-signing.p12"
-installer="$RUNNER_TEMP/clickmore-installer.p12"
 trap 'rm -f "$certificate" "$installer"' EXIT
+# Create private files before writing credentials; preserve the inherited mask.
+install -m 600 /dev/null "$certificate"
+install -m 600 /dev/null "$installer"
+install -m 600 /dev/null "$APPLE_NOTARY_KEY_PATH"
 printf '%s' "$APPLE_APPLICATION_CERTIFICATE_BASE64" | base64 -D > "$certificate"
 printf '%s' "$APPLE_NOTARY_KEY_BASE64" | base64 -D > "$APPLE_NOTARY_KEY_PATH"
 
 keychain_password="$(openssl rand -base64 32)"
 echo "::add-mask::$keychain_password"
 security create-keychain -p "$keychain_password" "$APPLE_SIGNING_KEYCHAIN"
+chmod 600 "$APPLE_SIGNING_KEYCHAIN"
 security set-keychain-settings -lut 7200 "$APPLE_SIGNING_KEYCHAIN"
 security unlock-keychain -p "$keychain_password" "$APPLE_SIGNING_KEYCHAIN"
 security import "$certificate" -f pkcs12 -k "$APPLE_SIGNING_KEYCHAIN" \

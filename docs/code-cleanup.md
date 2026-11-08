@@ -231,4 +231,31 @@ installation were not run. Intel binaries were compiled but not executed. UI
 permission animation, physical display unplug/replug and persistence failure
 injection were inspected rather than exhaustively exercised. Finite deterministic
 and seeded tests do not prove exhaustive concurrency or geometry safety. No push,
-PR, release or deployment was performed; changes remain in the worktree.
+PR, release or deployment was performed during the cleanup sweep. Its changes
+were subsequently committed as `c869ae87fe645f8d2c55cffb93e69e583d59e18d`.
+
+## Release follow-up
+
+The user subsequently authorized committing, pushing, and cutting a release.
+Release preparation advances `Info.plist` to 0.1.3 (build 4) and adds the changelog
+at `docs/releases/0.1.3.md`. App/core/test sources are unchanged from final A3, so
+E13–E16 remain applicable to their behavior; hosted CI will validate the actual
+release commit and versioned artifacts.
+
+The release-only scope also replaces existing process-mask changes with explicit
+private-file creation in `script/ci_signing.sh` and `.github/workflows/release.yml`,
+as required by the user's global instructions. Credential files are created at
+mode 600 before secret bytes are written; the temporary keychain receives an
+explicit mode 600. Shell syntax, plist lint, diff whitespace and a harmless local
+file-write/mode probe passed. Three read-only reviewers check credential ordering,
+workflow integration and release-note accuracy before publication.
+
+Release patch identity before this bookkeeping:
+`0aa4c080c2e6062e23d9be091a3213538943f84639d434e296c55e44537546a1`.
+The first release review identified that the existing-assets guard omitted the
+two certificate paths. The final patch adds both before any trap or write; a
+sentinel test confirmed that an existing installer certificate causes an early
+failure and preserves its bytes. The three reviewers rechecked this narrow delta
+with prior release-path coverage carried forward.
+Signing/notarization, hosted CI and Homebrew installation remain pending until
+the release workflow completes; no earlier local self-test clears those gates.
