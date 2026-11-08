@@ -34,7 +34,7 @@ hashes refer to the actual binaries at the time of each check.
 | E3 executable fixture | `script/test_runtime.sh`; bundled Debug arm64 execution; `CLICKMORE_TEST_APP="$PWD/dist/ClickMore.app" ./script/test_runtime.sh --self-test` | Passed: local AppKit events, counts `[1,1,1,1]`, order `[0,1,2,3]`; E2 artifact | Passed E14 on A3 |
 | E4 shell syntax | `ci.yml`; `for file in script/*.sh; do bash -n "$file" || exit; done` | Passed | Passed E15; scripts unchanged |
 | E5 system delivery | Cross-process `--integration-test`, real WindowServer events | Unavailable: baseline reports `postEventAccess: false`; not executed | Gap |
-| E6 release/CI | macOS 15 CI and signed universal Release, Xcode 26.2 | Not run; no authorized PR or release operation | Gap |
+| E6 release/CI | macOS 15 CI and signed universal Release, Xcode 26.2 | Not run during initial cleanup | Passed E17 after user authorized release; source `b8f55f5` |
 | E16 local Release | Shipping compile flags; `swift build --scratch-path .build/code-cleanup-release -c release --arch arm64 --arch x86_64 --product ClickMore`; assemble resources and ad-hoc-sign task-local bundle; `CLICKMORE_TEST_APP="$PWD/test-results/code-cleanup/ClickMore.app" ./script/test_runtime.sh --self-test` | Not run before edits; supplementary build-mode check | Universal compilation and arm64 local AppKit execution passed on A3; exact artifact below |
 
 There are no observed baseline failures. The executable self-test does not prove
@@ -225,9 +225,9 @@ are fixed; five app-internal mutation/helper surfaces were narrowed or localized
 Every inventory entry has a disposition; no confirmed in-scope defect is left open.
 No public core or persisted/CLI interface was removed.
 
-Remaining limits: E5 real OS posting/physical gestures require macOS permission;
-E6 hosted CI, exact Xcode 26.2 release, Developer ID signing/notarization and
-installation were not run. Intel binaries were compiled but not executed. UI
+Remaining limits: E5 real OS posting/physical gestures require macOS permission.
+E6 was initially unexecuted and is now closed by E17 below. Intel binaries were
+compiled but not executed. UI
 permission animation, physical display unplug/replug and persistence failure
 injection were inspected rather than exhaustively exercised. Finite deterministic
 and seeded tests do not prove exhaustive concurrency or geometry safety. No push,
@@ -257,5 +257,22 @@ two certificate paths. The final patch adds both before any trap or write; a
 sentinel test confirmed that an existing installer certificate causes an early
 failure and preserves its bytes. The three reviewers rechecked this narrow delta
 with prior release-path coverage carried forward.
-Signing/notarization, hosted CI and Homebrew installation remain pending until
-the release workflow completes; no earlier local self-test clears those gates.
+E17: **CI verified** and released at
+`b8f55f5d6ae9b7d5b23080c26499381a334ae5be` (`v0.1.3`).
+
+- [Build and test](https://github.com/HelgeSverre/clickmore/actions/runs/42520524284)
+  passed tests, universal development build and shell syntax checks.
+- [Signed release](https://github.com/HelgeSverre/clickmore/actions/runs/42520524287)
+  passed tests under Xcode 26.2, universal Release compilation, Developer ID
+  signing, Apple notarization/stapling, distributable validation, publication,
+  Homebrew update, Homebrew/PKG installation checks and credential cleanup.
+- [Published release](https://github.com/HelgeSverre/clickmore/releases/tag/v0.1.3)
+  contains PKG, ZIP, SHA256SUMS and BUILD_INFO. Both downloaded artifacts passed
+  `shasum -a 256 -c SHA256SUMS`; BUILD_INFO and the annotated tag resolve to the
+  exact tested release commit above.
+- PKG SHA-256: `c3491191d9a4d3f8e5f42e3e9f6d9c5eeb1995c42e3c046b3271d5c2bb323346`.
+  ZIP SHA-256: `029b33a531a88c48b50303571b7b3bb097a48c4c493cbf8fc9dca5f01ecfde4f`.
+  The published Homebrew cask is 0.1.3 and matches this ZIP checksum.
+
+This final evidence update changes documentation only; the release artifacts
+remain immutable at `b8f55f5`. E5 and Intel runtime execution remain coverage gaps.
