@@ -27,9 +27,17 @@ public enum ClickError: LocalizedError {
 public final class ClickSequencer {
     public private(set) var isRunning = false
     private let poster: any ClickEventPosting
+    private let sleep: @MainActor (Duration) async throws -> Void
     private var pressed: ScreenPoint?
 
-    public init(poster: any ClickEventPosting) { self.poster = poster }
+    public convenience init(poster: any ClickEventPosting) {
+        self.init(poster: poster, sleep: { try await Task.sleep(for: $0) })
+    }
+
+    init(poster: any ClickEventPosting, sleep: @escaping @MainActor (Duration) async throws -> Void) {
+        self.poster = poster
+        self.sleep = sleep
+    }
 
     public func run(points: [ScreenPoint], delayMilliseconds: Double) async throws {
         guard !isRunning else { throw ClickError.busy }
@@ -48,11 +56,14 @@ public final class ClickSequencer {
             guard poster.isAuthorized else { throw ClickError.permissionRequired }
             try poster.mouseDown(at: point)
             pressed = point
-            try await Task.sleep(for: .milliseconds(2))
+            try await sleep(.milliseconds(2))
+            // A completed sleep may resume successfully after cancellation.
+            // Shutdown may already have released this press synchronously.
+            try Task.checkCancellation()
             try poster.mouseUp(at: point)
             pressed = nil
             if index < points.count - 1 {
-                try await Task.sleep(for: .milliseconds(delay))
+                try await sleep(.milliseconds(delay))
             }
         }
     }

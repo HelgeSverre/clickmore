@@ -339,10 +339,3 @@ final class SpotView: DraggableOverlayView {
         }
     }
 }
-
-@MainActor
-func drawCentered(_ text: String, atY y: CGFloat, in rect: NSRect, font: NSFont, color: NSColor) {
-    let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
-    let size = (text as NSString).size(withAttributes: attributes)
-    (text as NSString).draw(at: CGPoint(x: rect.midX - size.width / 2, y: y), withAttributes: attributes)
-}

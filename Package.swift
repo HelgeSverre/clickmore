@@ -14,6 +14,7 @@ let package = Package(
             "ClickMoreCore",
             .product(name: "PermissionFlow", package: "PermissionFlow")
         ]),
-        .testTarget(name: "ClickMoreCoreTests", dependencies: ["ClickMoreCore"])
+        .testTarget(name: "ClickMoreCoreTests", dependencies: ["ClickMoreCore"]),
+        .testTarget(name: "ClickMoreTests", dependencies: ["ClickMore", "ClickMoreCore"])
     ]
 )

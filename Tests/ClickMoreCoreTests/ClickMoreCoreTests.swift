@@ -14,6 +14,33 @@ private final class RecordingPoster: ClickEventPosting {
     func finish() { finishes += 1 }
 }
 
+/// The delay completes successfully even when the waiting task was cancelled,
+/// reproducing a timer that became ready before its actor continuation ran.
+@MainActor
+private final class ControlledSleep {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var observer: CheckedContinuation<Void, Never>?
+
+    func sleep(_ duration: Duration) async throws {
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+            observer?.resume()
+            observer = nil
+        }
+    }
+
+    func waitUntilSuspended() async {
+        if continuation != nil { return }
+        await withCheckedContinuation { observer = $0 }
+    }
+
+    func resume() {
+        continuation?.resume()
+        continuation = nil
+    }
+}
+
+@Suite(.timeLimit(.minutes(1)))
 struct ClickMoreCoreTests {
     @Test @MainActor func sendsFourPairedClicksInOrderWithDelay() async throws {
         let poster = RecordingPoster()
@@ -30,11 +57,13 @@ struct ClickMoreCoreTests {
 
     @Test @MainActor func cancellationReleasesPressedButton() async throws {
         let poster = RecordingPoster()
-        let sequencer = ClickSequencer(poster: poster)
+        let delay = ControlledSleep()
+        let sequencer = ClickSequencer(poster: poster, sleep: delay.sleep)
         let point = ScreenPoint(x: 40, y: 50)
         let task = Task { try await sequencer.run(points: [point, point], delayMilliseconds: 250) }
-        while poster.events.isEmpty { await Task.yield() }
+        await delay.waitUntilSuspended()
         task.cancel()
+        delay.resume()
         do { try await task.value; Issue.record("Expected cancellation") } catch is CancellationError {} catch { throw error }
         #expect(poster.events.map { $0.0 } == ["down", "up"])
         #expect(poster.finishes == 1 && !sequencer.isRunning)
@@ -42,28 +71,35 @@ struct ClickMoreCoreTests {
 
     @Test @MainActor func refusesConcurrentBatch() async throws {
         let poster = RecordingPoster()
-        let sequencer = ClickSequencer(poster: poster)
+        let delay = ControlledSleep()
+        let sequencer = ClickSequencer(poster: poster, sleep: delay.sleep)
         let task = Task { try await sequencer.run(points: [ScreenPoint(x: 0, y: 0)], delayMilliseconds: 10) }
-        while !sequencer.isRunning { await Task.yield() }
+        await delay.waitUntilSuspended()
         do {
             try await sequencer.run(points: [ScreenPoint(x: 10, y: 20)], delayMilliseconds: 10)
             Issue.record("Concurrent sequence was accepted")
         } catch ClickError.busy {} catch { throw error }
+        delay.resume()
         try await task.value
         #expect(poster.events.count == 2)
     }
 
     @Test @MainActor func terminationCanReleaseBeforeTaskResumes() async throws {
         let poster = RecordingPoster()
-        let sequencer = ClickSequencer(poster: poster)
+        let delay = ControlledSleep()
+        let sequencer = ClickSequencer(poster: poster, sleep: delay.sleep)
         let point = ScreenPoint(x: 40, y: 50)
         let task = Task { try await sequencer.run(points: [point], delayMilliseconds: 10) }
-        while poster.events.isEmpty { await Task.yield() }
+        await delay.waitUntilSuspended()
+        // Queue a successful delay completion, then cancel/release before the
+        // main actor can resume run(). Cancellation cannot rely on sleep throwing.
+        delay.resume()
         task.cancel()
         sequencer.releaseHeldButton()
         #expect(poster.events.map { $0.0 } == ["down", "up"])
         do { try await task.value; Issue.record("Expected cancellation") } catch is CancellationError {} catch { throw error }
         #expect(poster.events.count == 2)
+        #expect(poster.finishes == 1 && !sequencer.isRunning)
     }
 
     @Test @MainActor func refusesEventsWithoutPermission() async throws {

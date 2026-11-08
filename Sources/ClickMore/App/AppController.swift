@@ -6,11 +6,11 @@ import PermissionFlow
 
 @MainActor @Observable
 final class AppController {
-    var layout: Layout
-    var preferences: Preferences
+    private(set) var layout: Layout
+    private(set) var preferences: Preferences
     private(set) var editing = false
     private(set) var firing = false
-    private(set) var permissionGranted = CGPreflightPostEventAccess()
+    private(set) var permissionGranted: Bool
     private(set) var permissionAttentionRequest = 0
     var message: String?
     var showSettings: (() -> Void)?
@@ -19,7 +19,8 @@ final class AppController {
 
     @ObservationIgnored private let store: StateStore
     @ObservationIgnored private let poster = SystemClickPoster()
-    @ObservationIgnored private lazy var sequencer = ClickSequencer(poster: poster)
+    @ObservationIgnored private let sequencer: ClickSequencer
+    @ObservationIgnored private let checkPermission: () -> Bool
     @ObservationIgnored private var fireTask: Task<Void, Never>?
     @ObservationIgnored private var permissionTimer: Timer?
     @ObservationIgnored private lazy var permissionGuide = PermissionFlow.makeController(
@@ -35,8 +36,12 @@ final class AppController {
     var activeSpots: [ClickSpot] { layout.activeSpots(on: Self.displays) }
     var hasTestLayout: Bool { boardBackup != nil }
 
-    init(store: StateStore) {
+    init(store: StateStore, sequencer: ClickSequencer? = nil,
+         checkPermission: @escaping () -> Bool = { CGPreflightPostEventAccess() }) {
         self.store = store
+        self.sequencer = sequencer ?? ClickSequencer(poster: poster)
+        self.checkPermission = checkPermission
+        permissionGranted = checkPermission()
         let visible = NSScreen.main?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1000, height: 800)
         let initial = Layout(trigger: ScreenPoint(x: visible.midX, y: visible.midY))
         do {
@@ -93,7 +98,7 @@ final class AppController {
     }
 
     func refreshPermission() {
-        let granted = CGPreflightPostEventAccess()
+        let granted = checkPermission()
         if granted != permissionGranted {
             permissionGranted = granted
             if granted { permissionGuide.closePanel() }
@@ -143,6 +148,8 @@ final class AppController {
     }
 
     func removeSpot(_ id: UUID) {
+        guard layout.spots.contains(where: { $0.id == id }) else { return }
+        cancelSequence()
         layout.spots.removeAll { $0.id == id }
         changed()
     }
@@ -220,7 +227,7 @@ final class AppController {
         }
     }
 
-    func cancelSequence() { fireTask?.cancel() }
+    private func cancelSequence() { fireTask?.cancel() }
 
     func useTestLayout(trigger: ScreenPoint, spots: [ScreenPoint]) {
         cancelSequence()
@@ -240,7 +247,7 @@ final class AppController {
         changed()
     }
 
-    func changed() {
+    private func changed() {
         overlays.refresh()
         saveTask?.cancel()
         saveTask = Task { [weak self] in
